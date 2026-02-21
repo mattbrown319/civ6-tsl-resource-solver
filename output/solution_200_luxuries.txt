@@ -1,0 +1,161 @@
+======================================================================
+  $200 SOLUTION: Minimum Cities for All 28 Luxury Types
+======================================================================
+
+Map: TSL World Map Huge (130 x 66 tiles)
+Ruleset: Gathering Storm (with all DLC)
+Resources: Fixed (pre-placed in .Civ6Map SQLite file)
+
+ANSWER: 9 cities
+
+  City 1: (24, 35)
+    Terrain: PLAINS_HILLS
+    Feature: None
+    Continent: NORTH_AMERICA
+    Harbor access: Yes (city on coast)
+    Luxury resources (5):
+      - AMBER at (26,36), distance 2
+      - JADE at (21,37), distance 3
+      - MARBLE at (23,38), distance 3
+      - SUGAR at (27,35), distance 3
+      - TOBACCO at (23,35), distance 1
+
+  City 2: (35, 16)
+    Terrain: DESERT
+    Feature: None
+    Continent: SOUTH_AMERICA
+    Harbor access: Yes (city on coast)
+    Luxury resources (2):
+      - HONEY at (38,14), distance 3
+      - SILVER at (35,17), distance 1
+
+  City 3: (46, 24)
+    Terrain: PLAINS
+    Feature: FLOODPLAINS_PLAINS
+    Continent: SOUTH_AMERICA
+    Harbor access: Yes (coast within workable range)
+    Luxury resources (3):
+      - COCOA at (46,22), distance 2
+      - COFFEE at (44,24), distance 2
+      - HONEY at (45,26), distance 2
+
+  City 4: (59, 34)
+    Terrain: PLAINS
+    Feature: FLOODPLAINS_PLAINS
+    Continent: AFRICA
+    Harbor access: No
+    Luxury resources (3):
+      - DIAMONDS at (58,33), distance 1
+      - INCENSE at (62,35), distance 3
+      - IVORY at (61,32), distance 3
+
+  City 5: (66, 44)
+    Terrain: GRASS
+    Feature: FOREST
+    Continent: EUROPE
+    Harbor access: Yes (city on coast)
+    Luxury resources (5):
+      - AMBER at (65,43), distance 2
+      - CITRUS at (67,42), distance 3
+      - OLIVES at (64,42), distance 3
+      - TRUFFLES at (67,47), distance 3
+      - WINE at (63,46), distance 3
+
+  City 6: (84, 53)
+    Terrain: PLAINS
+    Feature: None
+    Continent: ASIA
+    Harbor access: No
+    Luxury resources (2):
+      - FURS at (87,55), distance 3
+      - MERCURY at (81,53), distance 3
+
+  City 7: (103, 19)
+    Terrain: DESERT_HILLS
+    Feature: None
+    Continent: OCEANIA
+    Harbor access: Yes (city on coast)
+    Luxury resources (3):
+      - GYPSUM at (103,19), distance 0
+      - PEARLS at (102,17), distance 2
+      - SALT at (106,20), distance 3
+
+  City 8: (103, 29)
+    Terrain: PLAINS
+    Feature: JUNGLE
+    Continent: OCEANIA
+    Harbor access: Yes (city on coast)
+    Luxury resources (3):
+      - DYES at (102,27), distance 2
+      - SPICES at (105,27), distance 3
+      - TURTLES at (103,32), distance 3
+
+  City 9: (108, 43)
+    Terrain: PLAINS
+    Feature: FOREST
+    Continent: ASIA
+    Harbor access: Yes (city on coast)
+    Luxury resources (4):
+      - COTTON at (105,42), distance 3
+      - SILK at (105,44), distance 3
+      - TEA at (108,42), distance 1
+      - WHALES at (111,45), distance 3
+
+  COVERAGE SUMMARY
+  ────────────────
+  Luxury types covered:    28/28
+  Strategic types covered: 0/0
+  All cities harbor access: No
+  Min inter-city distance: 10 tiles (>= 4 required)
+
+  PROOF OF MINIMALITY
+  ───────────────────
+  Method: Integer Linear Programming (ILP) with CBC solver
+  
+  The problem is formulated as a Minimum Weighted Set Cover:
+  - Binary variable x_i for each candidate city tile i
+  - Minimize: sum(x_i)
+  - Subject to: for each resource type t,
+      sum(x_i for cities i that cover type t) >= 1
+  - Distance constraint: for each pair (i,j) with dist < 4,
+      x_i + x_j <= 1
+  
+  LP relaxation lower bound: 8.50
+  ILP optimal solution:      9
+  Since ceil(8.50) = 9 = 9,
+  the solution is provably optimal.
+  
+  The ILP solver guarantees that no feasible solution exists
+  with fewer than 9 cities while satisfying all constraints.
+  This is a certificate of mathematical minimality.
+
+  RESOURCE-TO-CITY MAPPING
+  ───────────────────────
+  [LUX] AMBER        -> City 1, City 5
+  [LUX] CITRUS       -> City 5
+  [LUX] COCOA        -> City 3
+  [LUX] COFFEE       -> City 3
+  [LUX] COTTON       -> City 9
+  [LUX] DIAMONDS     -> City 4
+  [LUX] DYES         -> City 8
+  [LUX] FURS         -> City 6
+  [LUX] GYPSUM       -> City 7
+  [LUX] HONEY        -> City 2, City 3
+  [LUX] INCENSE      -> City 4
+  [LUX] IVORY        -> City 4
+  [LUX] JADE         -> City 1
+  [LUX] MARBLE       -> City 1
+  [LUX] MERCURY      -> City 6
+  [LUX] OLIVES       -> City 5
+  [LUX] PEARLS       -> City 7
+  [LUX] SALT         -> City 7
+  [LUX] SILK         -> City 9
+  [LUX] SILVER       -> City 2
+  [LUX] SPICES       -> City 8
+  [LUX] SUGAR        -> City 1
+  [LUX] TEA          -> City 9
+  [LUX] TOBACCO      -> City 1
+  [LUX] TRUFFLES     -> City 5
+  [LUX] TURTLES      -> City 8
+  [LUX] WHALES       -> City 9
+  [LUX] WINE         -> City 5

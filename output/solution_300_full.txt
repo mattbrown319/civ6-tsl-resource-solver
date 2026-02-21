@@ -1,0 +1,211 @@
+======================================================================
+  $300 SOLUTION: All 28 Luxuries + All 7 Strategics + Coastal
+======================================================================
+
+Map: TSL World Map Huge (130 x 66 tiles)
+Ruleset: Gathering Storm (with all DLC)
+Resources: Fixed (pre-placed in .Civ6Map SQLite file)
+
+ANSWER: 10 cities
+
+  City 1: (24, 35)
+    Terrain: PLAINS_HILLS
+    Feature: None
+    Continent: NORTH_AMERICA
+    Harbor access: Yes (city on coast)
+    Luxury resources (5):
+      - AMBER at (26,36), distance 2
+      - JADE at (21,37), distance 3
+      - MARBLE at (23,38), distance 3
+      - SUGAR at (27,35), distance 3
+      - TOBACCO at (23,35), distance 1
+    Strategic resources (4):
+      - ALUMINUM at (27,34), distance 3
+      - COAL at (23,37), distance 2
+      - IRON at (22,35), distance 2
+      - OIL at (27,36), distance 3
+
+  City 2: (38, 20)
+    Terrain: PLAINS
+    Feature: None
+    Continent: SOUTH_AMERICA
+    Harbor access: Yes (coast within workable range)
+    Luxury resources (2):
+      - HONEY at (38,19), distance 1
+      - SILVER at (36,18), distance 3
+    Strategic resources (2):
+      - HORSES at (41,20), distance 3
+      - IRON at (38,17), distance 3
+
+  City 3: (47, 25)
+    Terrain: GRASS
+    Feature: FLOODPLAINS_GRASSLAND
+    Continent: SOUTH_AMERICA
+    Harbor access: Yes (city on coast)
+    Luxury resources (3):
+      - COCOA at (46,22), distance 3
+      - COFFEE at (44,24), distance 3
+      - HONEY at (45,26), distance 2
+    Strategic resources (1):
+      - NITER at (47,24), distance 1
+
+  City 4: (60, 40)
+    Terrain: GRASS_HILLS
+    Feature: None
+    Continent: AFRICA
+    Harbor access: Yes (city on coast)
+    Luxury resources (2):
+      - CITRUS at (59,42), distance 2
+      - OLIVES at (57,39), distance 3
+    Strategic resources (3):
+      - IRON at (59,38), distance 3
+      - NITER at (59,40), distance 1
+      - OIL at (63,39), distance 3
+
+  City 5: (63, 49)
+    Terrain: PLAINS
+    Feature: None
+    Continent: EUROPE
+    Harbor access: Yes (city on coast)
+    Luxury resources (3):
+      - MERCURY at (64,48), distance 1
+      - TRUFFLES at (64,51), distance 3
+      - WINE at (63,46), distance 3
+    Strategic resources (5):
+      - COAL at (66,49), distance 3
+      - HORSES at (62,49), distance 1
+      - NITER at (65,51), distance 3
+      - OIL at (63,52), distance 3
+      - URANIUM at (61,47), distance 3
+
+  City 6: (77, 29)
+    Terrain: PLAINS
+    Feature: None
+    Continent: AFRICA
+    Harbor access: Yes (city on coast)
+    Luxury resources (3):
+      - DIAMONDS at (74,27), distance 3
+      - INCENSE at (79,31), distance 3
+      - IVORY at (76,26), distance 3
+    Strategic resources (1):
+      - HORSES at (74,30), distance 3
+
+  City 7: (89, 36)
+    Terrain: GRASS
+    Feature: None
+    Continent: ASIA
+    Harbor access: Yes (city on coast)
+    Luxury resources (3):
+      - COTTON at (88,37), distance 2
+      - SILK at (88,35), distance 1
+      - TEA at (90,33), distance 3
+    Strategic resources (4):
+      - COAL at (91,35), distance 2
+      - HORSES at (87,36), distance 2
+      - IRON at (89,33), distance 3
+      - OIL at (86,37), distance 3
+
+  City 8: (104, 18)
+    Terrain: DESERT
+    Feature: None
+    Continent: OCEANIA
+    Harbor access: Yes (coast within workable range)
+    Luxury resources (3):
+      - GYPSUM at (103,19), distance 1
+      - PEARLS at (102,17), distance 2
+      - SALT at (106,20), distance 3
+    Strategic resources (3):
+      - HORSES at (106,16), distance 3
+      - IRON at (105,18), distance 1
+      - OIL at (103,20), distance 2
+
+  City 9: (104, 29)
+    Terrain: GRASS
+    Feature: FOREST
+    Continent: OCEANIA
+    Harbor access: Yes (city on coast)
+    Luxury resources (3):
+      - DYES at (102,27), distance 3
+      - SPICES at (105,27), distance 3
+      - TURTLES at (103,32), distance 3
+    Strategic resources (2):
+      - COAL at (104,28), distance 1
+      - OIL at (102,30), distance 2
+
+  City 10: (109, 47)
+    Terrain: PLAINS
+    Feature: None
+    Continent: ASIA
+    Harbor access: Yes (coast within workable range)
+    Luxury resources (2):
+      - FURS at (112,48), distance 3
+      - WHALES at (111,45), distance 3
+    Strategic resources (2):
+      - IRON at (108,46), distance 1
+      - OIL at (106,47), distance 3
+
+  COVERAGE SUMMARY
+  ────────────────
+  Luxury types covered:    28/28
+  Strategic types covered: 7/7
+  All cities harbor access: Yes
+  Min inter-city distance: 9 tiles (>= 4 required)
+
+  PROOF OF MINIMALITY
+  ───────────────────
+  Method: Integer Linear Programming (ILP) with CBC solver
+  
+  The problem is formulated as a Minimum Weighted Set Cover:
+  - Binary variable x_i for each candidate city tile i
+  - Minimize: sum(x_i)
+  - Subject to: for each resource type t,
+      sum(x_i for cities i that cover type t) >= 1
+  - Distance constraint: for each pair (i,j) with dist < 4,
+      x_i + x_j <= 1
+  
+  LP relaxation lower bound: 9.50
+  ILP optimal solution:      10
+  Since ceil(9.50) = 10 = 10,
+  the solution is provably optimal.
+  
+  The ILP solver guarantees that no feasible solution exists
+  with fewer than 10 cities while satisfying all constraints.
+  This is a certificate of mathematical minimality.
+
+  RESOURCE-TO-CITY MAPPING
+  ───────────────────────
+  [STR] ALUMINUM     -> City 1
+  [LUX] AMBER        -> City 1
+  [LUX] CITRUS       -> City 4
+  [STR] COAL         -> City 1, City 5, City 7, City 9
+  [LUX] COCOA        -> City 3
+  [LUX] COFFEE       -> City 3
+  [LUX] COTTON       -> City 7
+  [LUX] DIAMONDS     -> City 6
+  [LUX] DYES         -> City 9
+  [LUX] FURS         -> City 10
+  [LUX] GYPSUM       -> City 8
+  [LUX] HONEY        -> City 2, City 3
+  [STR] HORSES       -> City 2, City 5, City 6, City 7, City 8
+  [LUX] INCENSE      -> City 6
+  [STR] IRON         -> City 1, City 2, City 4, City 7, City 8, City 10
+  [LUX] IVORY        -> City 6
+  [LUX] JADE         -> City 1
+  [LUX] MARBLE       -> City 1
+  [LUX] MERCURY      -> City 5
+  [STR] NITER        -> City 3, City 4, City 5
+  [STR] OIL          -> City 1, City 4, City 5, City 7, City 8, City 9, City 10
+  [LUX] OLIVES       -> City 4
+  [LUX] PEARLS       -> City 8
+  [LUX] SALT         -> City 8
+  [LUX] SILK         -> City 7
+  [LUX] SILVER       -> City 2
+  [LUX] SPICES       -> City 9
+  [LUX] SUGAR        -> City 1
+  [LUX] TEA          -> City 7
+  [LUX] TOBACCO      -> City 1
+  [LUX] TRUFFLES     -> City 5
+  [LUX] TURTLES      -> City 9
+  [STR] URANIUM      -> City 5
+  [LUX] WHALES       -> City 10
+  [LUX] WINE         -> City 5
