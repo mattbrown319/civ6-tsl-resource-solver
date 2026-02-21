@@ -162,16 +162,15 @@ def _find_ocean_coast(tiles):
     return coast & connected
 
 
-def has_harbor_access(x, y, tiles, _cache={}):
-    """Check if a city can build a harbor on ocean coast within 3 hexes.
+def has_harbor_access(x, y, tiles, workable_radius=3, _cache={}):
+    """Check if a city can build a harbor on ocean coast within workable range.
 
     In Civ 6, a harbor district can be placed on any coast tile within
-    the city's workable range (up to 3 tiles from city center).
-    Excludes lake tiles (coast not connected to ocean).
+    the city's workable range. Excludes lake tiles (coast not connected to ocean).
     """
     if "ocean_coast" not in _cache:
         _cache["ocean_coast"] = _find_ocean_coast(tiles)
-    return any(hex_distance(x, y, cx, cy) <= 3
+    return any(hex_distance(x, y, cx, cy) <= workable_radius
                for cx, cy in _cache["ocean_coast"])
 
 
@@ -191,7 +190,7 @@ def get_hex_neighbors(x, y):
     return neighbors
 
 
-def build_coverage(tiles, target_resources):
+def build_coverage(tiles, target_resources, workable_radius=3):
     resource_locations = defaultdict(list)
     for (x, y), tile in tiles.items():
         res = tile["resource"]
@@ -205,7 +204,7 @@ def build_coverage(tiles, target_resources):
     for res_type, locations in resource_locations.items():
         for rx, ry in locations:
             for cx, cy in valid_cities:
-                if hex_distance(cx, cy, rx, ry) <= 3:
+                if hex_distance(cx, cy, rx, ry) <= workable_radius:
                     resource_coverage[(cx, cy)].add(res_type)
 
     candidate_cities = {pos: types for pos, types in resource_coverage.items()
@@ -215,13 +214,15 @@ def build_coverage(tiles, target_resources):
 
 
 def solve_minimum_cover(candidate_cities, resource_types, tiles,
-                        require_coastal=False, min_city_dist=0):
+                        require_coastal=False, min_city_dist=0,
+                        workable_radius=3):
     all_types = sorted(resource_types)
     city_positions = sorted(candidate_cities.keys())
 
     if require_coastal:
         coastal_cities = {pos for pos in city_positions
-                          if has_harbor_access(pos[0], pos[1], tiles)}
+                          if has_harbor_access(pos[0], pos[1], tiles,
+                                               workable_radius=workable_radius)}
         city_positions = sorted(coastal_cities)
         candidate_cities = {pos: types for pos, types in candidate_cities.items()
                             if pos in coastal_cities}
@@ -324,7 +325,7 @@ TERRAIN_COLORS = {
 
 
 def draw_map(tiles, selected_cities, candidate_cities, resource_locations,
-             filename, title, target_resources):
+             filename, title, target_resources, workable_radius=3):
     """Draw the hex map with cities and resources marked."""
     fig, ax = plt.subplots(1, 1, figsize=(52, 22))
     ax.set_aspect('equal')
@@ -355,7 +356,8 @@ def draw_map(tiles, selected_cities, candidate_cities, resource_locations,
         px, py = hex_to_pixel(cx, cy)
 
         # Draw coverage radius (3 tiles)
-        circle = plt.Circle((px, py), hex_size * 10, fill=False,
+        circle_radius = hex_size * (10 / 3) * workable_radius
+        circle = plt.Circle((px, py), circle_radius, fill=False,
                              edgecolor=city_colors[i], linewidth=1.5,
                              linestyle='--', alpha=0.5)
         ax.add_patch(circle)
@@ -412,7 +414,8 @@ def draw_map(tiles, selected_cities, candidate_cities, resource_locations,
 # ============================================================
 
 def generate_report(selected_cities, candidate_cities, resource_locations,
-                    tiles, lp_bound, scenario_label, target_resources):
+                    tiles, lp_bound, scenario_label, target_resources,
+                    workable_radius=3):
     """Generate detailed text report."""
     lines = []
     lines.append(f"{'='*70}")
@@ -433,7 +436,7 @@ def generate_report(selected_cities, candidate_cities, resource_locations,
         tile = tiles[(cx, cy)]
         covered = candidate_cities.get((cx, cy), set())
         adj_coastal = is_coastal_tile(cx, cy, tiles)
-        harbor = has_harbor_access(cx, cy, tiles)
+        harbor = has_harbor_access(cx, cy, tiles, workable_radius=workable_radius)
 
         lux = sorted([r for r in covered if r in LUXURY_RESOURCES])
         strat = sorted([r for r in covered if r in STRATEGIC_RESOURCES])
@@ -457,7 +460,7 @@ def generate_report(selected_cities, candidate_cities, resource_locations,
                 # Find which instance(s) this city covers
                 for rx, ry in resource_locations.get(r, []):
                     d = hex_distance(cx, cy, rx, ry)
-                    if d <= 3:
+                    if d <= workable_radius:
                         lines.append(f"      - {resource_name(r)} at ({rx},{ry}), distance {d}")
                         break
         if strat:
@@ -465,7 +468,7 @@ def generate_report(selected_cities, candidate_cities, resource_locations,
             for r in strat:
                 for rx, ry in resource_locations.get(r, []):
                     d = hex_distance(cx, cy, rx, ry)
-                    if d <= 3:
+                    if d <= workable_radius:
                         lines.append(f"      - {resource_name(r)} at ({rx},{ry}), distance {d}")
                         break
         lines.append(f"")
@@ -479,7 +482,8 @@ def generate_report(selected_cities, candidate_cities, resource_locations,
     lines.append(f"  Luxury types covered:    {len(all_covered_lux)}/{len(lux_on_map)}")
     lines.append(f"  Strategic types covered: {len(all_covered_strat)}/{len(strat_on_map)}")
 
-    all_harbor = all(has_harbor_access(cx, cy, tiles) for cx, cy in selected_cities)
+    all_harbor = all(has_harbor_access(cx, cy, tiles, workable_radius=workable_radius)
+                     for cx, cy in selected_cities)
     lines.append(f"  All cities harbor access: {'Yes' if all_harbor else 'No'}")
 
     # City spacing
@@ -601,7 +605,67 @@ def main():
                  f"$300 Solution: {len(selected_bonus)} Cities — All Luxuries + Strategics + Coastal",
                  all_target)
 
-    print(f"\nAll outputs saved to {OUTPUT_DIR}/")
+    # ---- 5-tile radius variants ----
+    output_5 = os.path.join(SCRIPT_DIR, "output_radius5")
+    os.makedirs(output_5, exist_ok=True)
+
+    # Luxuries only, radius 5
+    print("\nBuilding luxury coverage (radius 5)...")
+    cand_lux5, res_locs_lux5 = build_coverage(tiles, LUXURY_RESOURCES,
+                                               workable_radius=5)
+    print(f"  {len(cand_lux5)} candidate cities")
+
+    print("Solving luxury-only radius 5 (with 4-tile spacing)...")
+    selected_lux5, lp_lux5 = solve_minimum_cover(
+        cand_lux5, set(res_locs_lux5.keys()), tiles,
+        require_coastal=False, min_city_dist=MIN_CITY_DISTANCE,
+        workable_radius=5)
+
+    if selected_lux5:
+        report_lux5 = generate_report(
+            selected_lux5, cand_lux5, res_locs_lux5, tiles, lp_lux5,
+            "BONUS: Minimum Cities for All 28 Luxury Types (5-Tile Radius)",
+            LUXURY_RESOURCES, workable_radius=5)
+        report_path = os.path.join(output_5, "solution_luxuries_r5.txt")
+        with open(report_path, "w") as f:
+            f.write(report_lux5)
+        print(f"  Report: {report_path}")
+        print(report_lux5)
+
+        draw_map(tiles, selected_lux5, cand_lux5, res_locs_lux5,
+                 os.path.join(output_5, "map_luxuries_r5.png"),
+                 f"Bonus: {len(selected_lux5)} Cities — All 28 Luxuries (5-Tile Radius)",
+                 LUXURY_RESOURCES, workable_radius=5)
+
+    # Full (lux + strat + harbor), radius 5
+    print("\nBuilding full coverage (radius 5)...")
+    cand_all5, res_locs_all5 = build_coverage(tiles, all_target,
+                                               workable_radius=5)
+    print(f"  {len(cand_all5)} candidate cities")
+
+    print("Solving luxury + strategic + coastal radius 5 (with 4-tile spacing)...")
+    selected_bonus5, lp_bonus5 = solve_minimum_cover(
+        cand_all5, set(res_locs_all5.keys()), tiles,
+        require_coastal=True, min_city_dist=MIN_CITY_DISTANCE,
+        workable_radius=5)
+
+    if selected_bonus5:
+        report_bonus5 = generate_report(
+            selected_bonus5, cand_all5, res_locs_all5, tiles, lp_bonus5,
+            "BONUS: All 28 Luxuries + All 7 Strategics + Coastal (5-Tile Radius)",
+            all_target, workable_radius=5)
+        report_path = os.path.join(output_5, "solution_full_r5.txt")
+        with open(report_path, "w") as f:
+            f.write(report_bonus5)
+        print(f"  Report: {report_path}")
+        print(report_bonus5)
+
+        draw_map(tiles, selected_bonus5, cand_all5, res_locs_all5,
+                 os.path.join(output_5, "map_full_r5.png"),
+                 f"Bonus: {len(selected_bonus5)} Cities — All Luxuries + Strategics + Coastal (5-Tile Radius)",
+                 all_target, workable_radius=5)
+
+    print(f"\nAll outputs saved to {OUTPUT_DIR}/ and {output_5}/")
 
 
 if __name__ == "__main__":
